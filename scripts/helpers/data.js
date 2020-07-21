@@ -5,7 +5,7 @@ let game;
 let peer;
 
 // IMAGES
-const allAssets = { floor: [], wall: [], knife: [], torch: [], gps: [], flare: [], hammer: [], boots: [] };
+const allAssets = { floor: [], wall: [], knife: [], torch: [], gps: [], flare: [], hammer: [], boots: [], start: [] };
 const lightInt = 1;
 let assetsLoaded = 0;
 const numTutorialPages = 5;
@@ -22,6 +22,11 @@ const spriteSize = {
     monster: 39, whitewizard: 16, blackwizard: 16, bluerobe: 16, whiterobe: 16,
     darkrobe: 16, whiteknight: 19, blueknight: 19, darkknight: 19, dragon: 18
 };
+
+const spriteColor = {
+    monster: "#d24f26", whitewizard: "#ffffff", blackwizard: "#3c3b3b", bluerobe: "#428cd0", whiterobe: "#ffffff",
+    darkrobe: "#3f3c3c", whiteknight: "#ffffff", blueknight: "#4791df", darkknight: "#411e59", dragon: "#81cbee"
+}
 
 let unusedSprites = Object.keys(playerSprites);
 let idToSprite = {};
@@ -102,6 +107,8 @@ let alertMsg = '';
 let alertTime = 0;
 const alertRate = 5;
 const alertMaxTime = 855;
+
+let startRotation = null;
 
 // MINIMAP
 let minimap;
