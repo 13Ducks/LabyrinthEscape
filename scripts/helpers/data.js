@@ -5,13 +5,26 @@ let game;
 let peer;
 
 // IMAGES
-const allAssets = { floor: [], wall: [], knife: [], torch: [], gps: [], flare: [], hammer: [], boots: [] }
+const allAssets = { floor: [], wall: [], knife: [], torch: [], gps: [], flare: [], hammer: [], boots: [] };
 const lightInt = 1;
 let assetsLoaded = 0;
 const numTutorialPages = 5;
 const totalAssets = (101 / lightInt) * Object.keys(allAssets).length + numTutorialPages;
 const tutorialPages = []
 let currentTutorialPage = 0;
+
+const playerSprites = {
+    monster: {}, whitewizard: {}, blackwizard: {}, bluerobe: {}, whiterobe: {},
+    darkrobe: {}, whiteknight: {}, blueknight: {}, darkknight: {}, dragon: {}
+};
+
+const spriteSize = {
+    monster: 39, whitewizard: 16, blackwizard: 16, bluerobe: 16, whiterobe: 16,
+    darkrobe: 16, whiteknight: 19, blueknight: 19, darkknight: 19, dragon: 18
+};
+
+let unusedSprites = Object.keys(playerSprites);
+let idToSprite = {};
 
 // MENU
 const validCharacters = "qwertyuiopasdfghjklzxcvbnm1234567890QWERTYUIOPASDFGHJKLZXCVBNM";
@@ -175,6 +188,19 @@ function resetConn() {
     allPlayers = new Group();
 
     player = genObj(0, 0, scale / 2, scale / 2, gameColors.player);
+
+    let chosenVal = 'monster';
+    let chosenIndex = null;
+
+    while (chosenVal == 'monster') {
+        chosenIndex = Math.floor(Math.random() * unusedSprites.length);
+        chosenVal = unusedSprites[chosenIndex];
+    }
+    unusedSprites.splice(chosenIndex, 1);
+
+    idToSprite[myID] = chosenVal;
+    addAnimation(player, playerSprites[chosenVal]);
+
     allPlayers.add(player);
     playerPos[myID] = player;
 }

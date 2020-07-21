@@ -9,24 +9,41 @@ function connectionHost() {
                     allConnections.push(conn);
                     playerPos[conn.peer] = genObj(0, 0, scale / 2, scale / 2, gameColors.player);
                     allPlayers.add(playerPos[conn.peer]);
+
+                    let chosenVal = 'monster';
+                    let chosenIndex = null;
+
+                    while (chosenVal == 'monster') {
+                        chosenIndex = Math.floor(Math.random() * unusedSprites.length);
+                        chosenVal = unusedSprites[chosenIndex];
+                    }
+                    unusedSprites.splice(chosenIndex, 1);
+
+                    idToSprite[conn.peer] = chosenVal;
+                    addAnimation(playerPos[conn.peer], playerSprites[chosenVal]);
+
                     menu.update();
+
+                    conn.send("animation," + chosenVal)
                 }
                 if (allConnections.indexOf(conn) == -1) return;
                 switch (splitData[0]) {
                     case 'pos':
                         playerPos[conn.peer].position.x = splitData[1] * scale;
                         playerPos[conn.peer].position.y = splitData[2] * scale;
+                        playerPos[conn.peer].changeAnimation(splitData[3]);
                         break;
                     case 'name':
                         idToName[conn.peer] = splitData[1];
+
                         menu.update();
 
-                        conn.send("name," + peer.id + "," + idToName[peer.id]);
+                        conn.send("name," + peer.id + "," + idToName[peer.id] + "," + idToSprite[peer.id]);
                         for (let c in allConnections) {
 
                             if (allConnections[c].peer != conn.peer) {
-                                conn.send("name," + allConnections[c].peer + "," + idToName[allConnections[c].peer]);
-                                allConnections[c].send("name," + conn.peer + "," + idToName[conn.peer]);
+                                conn.send("name," + allConnections[c].peer + "," + idToName[allConnections[c].peer] + "," + idToSprite[allConnections[c].peer]);
+                                allConnections[c].send("name," + conn.peer + "," + idToName[conn.peer] + "," + idToSprite[conn.peer]);
                             }
                         }
                         break;
@@ -107,6 +124,9 @@ function connectionHost() {
                         playerPos[conn.peer].remove();
                         delete playerPos[conn.peer];
                         delete idToName[conn.peer];
+
+                        unusedSprites.push(idToSprite[conn.peer])
+                        delete idToSprite[conn.peer]
                         conn.close();
                         menu.update();
                         break;
@@ -163,8 +183,15 @@ function connectToHost(id) {
                     mazeSeed = +splitData[1];
                     monster = playerPos[splitData[2]];
                     monster.shapeColor = gameColors.monster;
-                    for (let s of allPlayers) {
-                        if (s != monster) s.shapeColor = gameColors.player;
+                    addAnimation(monster, playerSprites['monster']);
+                    monster.scale = 1;
+
+                    for (let key of Object.keys(playerPos)) {
+                        if (playerPos[key] != monster) {
+                            playerPos[key].shapeColor = gameColors.player;
+                            addAnimation(playerPos[key], playerSprites[idToSprite[key]]);
+                            playerPos[key].scale = 2;
+                        }
                     }
 
                     isMonster = player == monster;
@@ -178,15 +205,25 @@ function connectToHost(id) {
                     let pID = splitData[1];
                     playerPos[pID].position.x = splitData[2] * scale;
                     playerPos[pID].position.y = splitData[3] * scale;
+                    playerPos[pID].changeAnimation(splitData[4]);
                     break;
                 case 'name':
+                    print(splitData)
                     idToName[splitData[1]] = splitData[2];
-                    menu.update();
 
                     let otherPlayer = genObj(0, 0, scale / 2, scale / 2, gameColors.player);
                     playerPos[splitData[1]] = otherPlayer;
                     allPlayers.add(otherPlayer);
+
+                    idToSprite[splitData[1]] = splitData[3];
+                    addAnimation(otherPlayer, playerSprites[splitData[3]]);
+
+                    menu.update();
+
                     break;
+                case 'animation':
+                    idToSprite[peer.id] = splitData[1]
+                    addAnimation(player, playerSprites[splitData[1]])
                 case 'changename':
                     idToName[splitData[2]] = splitData[1];
                     menu.update();
@@ -363,16 +400,16 @@ function sendCompletionInfo(id) {
 function sendPositionData() {
     if (!isHost && allConnections.length == 1) {
         if (allConnections[0] && allConnections[0].open) {
-            allConnections[0].send('pos,' + (player.position.x / scale) + ',' + (player.position.y / scale));
+            allConnections[0].send('pos,' + (player.position.x / scale) + ',' + (player.position.y / scale) + ',' + player.getAnimationLabel());
         }
     } else if (isHost) {
         for (let c in allConnections) {
             if (allConnections[c] && allConnections[c].open) {
-                allConnections[c].send('pos,' + peer.id + ',' + (player.position.x / scale) + ',' + (player.position.y / scale));
+                allConnections[c].send('pos,' + peer.id + ',' + (player.position.x / scale) + ',' + (player.position.y / scale) + ',' + player.getAnimationLabel());
                 for (let c2 in allConnections) {
                     if (allConnections[c2] && allConnections[c2].open && allConnections[c] != allConnections[c2]) {
                         let peerID = allConnections[c2].peer;
-                        allConnections[c].send('pos,' + peerID + ',' + (playerPos[peerID].position.x / scale) + ',' + (playerPos[peerID].position.y / scale));
+                        allConnections[c].send('pos,' + peerID + ',' + (playerPos[peerID].position.x / scale) + ',' + (playerPos[peerID].position.y / scale) + ',' + playerPos[peerID].getAnimationLabel());
                     }
                 }
             }
@@ -384,8 +421,15 @@ function sendStartInfo() {
     const monsterID = Object.keys(playerPos)[floor(Math.random() * Object.keys(playerPos).length)];
     monster = playerPos[monsterID];
     monster.shapeColor = gameColors.monster;
-    for (let s of allPlayers) {
-        if (s != monster) s.shapeColor = gameColors.player;
+    addAnimation(monster, playerSprites['monster'])
+    monster.scale = 1;
+
+    for (let key of Object.keys(playerPos)) {
+        if (playerPos[key] != monster) {
+            playerPos[key].shapeColor = gameColors.player;
+            addAnimation(playerPos[key], playerSprites[idToSprite[key]]);
+            playerPos[key].scale = 2;
+        }
     }
 
     isMonster = player == monster;
@@ -443,4 +487,11 @@ function sendChangeNameInfo() {
             allConnections[c].send('changename,' + idToName[myID] + ',' + peer.id);
         }
     }
+}
+
+function addAnimation(sprite, anim) {
+    sprite.addAnimation('walk_front', anim['front']);
+    sprite.addAnimation('walk_back', anim['back']);
+    sprite.addAnimation('walk_left', anim['left']);
+    sprite.addAnimation('walk_right', anim['right']);
 }
