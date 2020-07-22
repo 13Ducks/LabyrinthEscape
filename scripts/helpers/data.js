@@ -5,7 +5,7 @@ let game;
 let peer;
 
 // IMAGES
-const allAssets = { floor: [], wall: [], knife: [], torch: [], gps: [], flare: [], hammer: [], boots: [], start: [] };
+const allAssets = { floor: [], wall: [], knife: [], torch: [], gps: [], flare: [], hammer: [], boots: [], start: [], end: [] };
 const lightInt = 1;
 let assetsLoaded = 0;
 const numTutorialPages = 5;
@@ -81,6 +81,8 @@ const endingTime = 5000;
 let renderDecreaseTimings = [];
 let currentEndingTime = endingTime;
 let endingMenu = null;
+
+let prevPos = [0, 0];
 
 // MAZE
 let m;
@@ -206,7 +208,6 @@ function resetConn() {
     unusedSprites.splice(chosenIndex, 1);
 
     idToSprite[myID] = chosenVal;
-    addAnimation(player, playerSprites[chosenVal]);
 
     allPlayers.add(player);
     playerPos[myID] = player;

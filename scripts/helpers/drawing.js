@@ -59,23 +59,33 @@ function positiveMod(i, n) {
 }
 
 function updateAnimation() {
-    dir = positiveMod(round(player.getDirection() / 90) * 90, 360)
+    if (player.getSpeed() < 0.5) {
+        // dragon needs to be always animated or looks bad
+        if (player == monster || idToSprite[peer.id] != 'dragon')
+            player.animation.stop();
+    } else {
+        let angleMov = Math.atan2(player.position.x - prevPos[0], player.position.y - prevPos[1]) / Math.PI * 180
+        orientation = positiveMod(round(angleMov / 90) * 90, 360)
 
-    switch (dir) {
-        case 0:
-            player.changeAnimation('walk_right');
-            break;
-        case 90:
-            player.changeAnimation('walk_front');
-            break;
-        case 180:
-            player.changeAnimation('walk_left');
-            break;
-        case 270:
-            player.changeAnimation('walk_back');
-            break;
+        switch (orientation) {
+            case 0:
+                player.changeAnimation('walk_front');
+                break;
+            case 90:
+                player.changeAnimation('walk_right');
+                break;
+            case 180:
+                player.changeAnimation('walk_back');
+                break;
+            case 270:
+                player.changeAnimation('walk_left');
+                break;
+        }
+
+        player.animation.play();
     }
 }
+
 
 function updateVelocities() {
     const a = keyDown('a'), d = keyDown('d'), w = keyDown('w'), s = keyDown('s');
@@ -84,11 +94,11 @@ function updateVelocities() {
         player.velocity.x *= friction / (friction + 1);
     } else if (a) {
         player.velocity.x = (friction * player.velocity.x - (scale / maxSpeed)) / (friction + 1);
-        orientation = 180;
+        //orientation = 180;
         //player.changeAnimation('walk_left');
     } else if (d) {
         player.velocity.x = (friction * player.velocity.x + (scale / maxSpeed)) / (friction + 1);
-        orientation = 0;
+        //orientation = 0;
         //player.changeAnimation('walk_right');
     }
 
@@ -96,11 +106,11 @@ function updateVelocities() {
         player.velocity.y *= friction / (friction + 1);
     } else if (w) {
         player.velocity.y = (friction * player.velocity.y - (scale / maxSpeed)) / (friction + 1);
-        orientation = 270;
+        //orientation = 270;
         //player.changeAnimation('walk_back');
     } else if (s) {
         player.velocity.y = (friction * player.velocity.y + (scale / maxSpeed)) / (friction + 1);
-        orientation = 90;
+        //orientation = 90;
         //player.changeAnimation('walk_front');
     }
 }
@@ -146,15 +156,24 @@ function drawMaze(pX, pY) {
         for (let j = bX; j < tX; j++) {
             const locX = (j + 0.5) * scale, locY = (i + 0.5) * scale;
             const hyp = dist(player.position.x, player.position.y, locX, locY);
-            if (m.start[0] == i && m.start[1] == j && hyp <= maxHyp) {
-                push();
-                translate(locX, locY);
-                rotate(startRotation);
-                image(allAssets.start[floor((100 / lightInt) * (hyp / maxHyp))], 0, 0, scale, scale);
-                pop();
-            } else {
-                const imageArray = (m.grid[i][j] ? allAssets.wall : allAssets.floor);
-                if (hyp <= maxHyp) image(imageArray[floor((100 / lightInt) * (hyp / maxHyp))], locX, locY, scale, scale);
+            if (hyp <= maxHyp) {
+                if (m.start[0] == i && m.start[1] == j) {
+                    push();
+                    translate(locX, locY);
+                    rotate(startRotation);
+                    image(allAssets.start[floor((100 / lightInt) * (hyp / maxHyp))], 0, 0, scale, scale);
+                    pop();
+                } else if (m.end[0] == i && m.end[1] == j) {
+                    push();
+                    translate(locX, locY);
+                    // end sprite is already rotated 180 compared to start, so same rotation works
+                    rotate(startRotation);
+                    image(allAssets.end[floor((100 / lightInt) * (hyp / maxHyp))], 0, 0, scale, scale);
+                    pop();
+                } else {
+                    const imageArray = (m.grid[i][j] ? allAssets.wall : allAssets.floor);
+                    image(imageArray[floor((100 / lightInt) * (hyp / maxHyp))], locX, locY, scale, scale);
+                }
             }
         }
     }

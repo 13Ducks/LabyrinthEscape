@@ -25,6 +25,8 @@ class Game {
         updateAnimation();
         updateVelocities();
 
+        prevPos = [player.position.x, player.position.y];
+
         for (let spr of allPlayers) {
             if (spr != player || !spectating) spr.collide(walls);
             spr.collide(border);
@@ -66,8 +68,6 @@ class Game {
         drawMaze(floor(player.position.x / scale), floor(player.position.y / scale));
 
         if (!inEnding) this.update();
-
-        drawSprite(exit);
 
         push();
         for (let plr of allPlayers) {
